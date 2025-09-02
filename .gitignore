@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.env
+instance/
+.pytest_cache/
+.DS_Store
+*.csv
+*.xlsx
+*.xls
+*.json
+*.html
