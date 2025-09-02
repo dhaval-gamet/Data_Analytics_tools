@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Data Analysis Tool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        .section-title {
+            border-bottom: 2px solid #0d6efd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .preview-table {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .analysis-result {
+            white-space: pre-wrap;
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="text-center section-title">Advanced Data Analysis Tool</h1>
+                <p class="text-center">Upload your data file and perform advanced analysis</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- File Upload Section -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-upload me-2"></i>Upload Data File
+                    </div>
+                    <div class="card-body">
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="fileInput" class="form-label">Select file (CSV, Excel, JSON)</label>
+                                <input class="form-control" type="file" id="fileInput" name="file" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-cloud-upload-alt me-2"></i>Upload
+                            </button>
+                        </form>
+                        <div id="uploadStatus" class="mt-3"></div>
+                    </div>
+                </div>
+
+                <!-- Data Preview -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-table me-2"></i>Data Preview
+                    </div>
+                    <div class="card-body">
+                        <div id="dataPreview" class="preview-table"></div>
+                        <div id="dataInfo" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analysis Section -->
+            <div class="col-md-6">
+                <!-- Data Cleaning -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-broom me-2"></i>Data Cleaning
+                    </div>
+                    <div class="card-body">
+                        <div id="cleaningSuggestions" class="mb-3 p-3 bg-light rounded"></div>
+                        <button id="cleanDataBtn" class="btn btn-primary">
+                            <i class="fas fa-magic me-2"></i>Clean Data Automatically
+                        </button>
+                        <div id="cleaningResult" class="mt-3"></div>
+                    </div>
+                </div>
+
+                <!-- Analysis Options -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-line me-2"></i>Analysis Options
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button id="analyzeBtn" class="btn btn-primary mb-2">
+                                <i class="fas fa-search me-2"></i>Analyze Data
+                            </button>
+                            <button id="recommendationsBtn" class="btn btn-primary mb-2">
+                                <i class="fas fa-lightbulb me-2"></i>Get Chart Recommendations
+                            </button>
+                            <button id="advancedAnalysisBtn" class="btn btn-primary mb-2">
+                                <i class="fas fa-rocket me-2"></i>Perform Advanced Analysis
+                            </button>
+                            <button id="generateReportBtn" class="btn btn-primary">
+                                <i class="fas fa-file-pdf me-2"></i>Generate Automated Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Results -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-clipboard-list me-2"></i>Analysis Results
+                    </div>
+                    <div class="card-body">
+                        <div id="analysisResult" class="analysis-result"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart Recommendations -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-bar me-2"></i>Chart Recommendations
+                    </div>
+                    <div class="card-body">
+                        <div id="chartRecommendations"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('file', document.getElementById('fileInput').files[0]);
+            
+            const statusDiv = document.getElementById('uploadStatus');
+            statusDiv.innerHTML = '<div class="alert alert-info">Uploading file...</div>';
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+                    if (data.suggestions) {
+                        document.getElementById('cleaningSuggestions').innerHTML = 
+                            `<h6>Data Cleaning Suggestions:</h6><pre class="mb-0">${data.suggestions}</pre>`;
+                    }
+                    
+                    // Load data preview
+                    loadDataPreview();
+                } else {
+                    statusDiv.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            }
+        });
+        
+        async function loadDataPreview() {
+            const response = await fetch('/preview');
+            const data = await response.json();
+            
+            if (data.success) {
+                document.getElementById('dataPreview').innerHTML = data.preview;
+                document.getElementById('dataInfo').innerHTML = `
+                    <p><strong>Data Shape:</strong> ${data.shape}</p>
+                    <p><strong>Missing Values:</strong> ${data.missing}</p>
+                    <p><strong>Duplicate Rows:</strong> ${data.duplicates}</p>
+                `;
+            }
+        }
+        
+        document.getElementById('analyzeBtn').addEventListener('click', async function() {
+            const resultDiv = document.getElementById('analysisResult');
+            resultDiv.innerHTML = '<div class="alert alert-info">Analyzing data...</div>';
+            
+            try {
+                const response = await fetch('/analyze');
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `<pre>${data.report}</pre>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            }
+        });
+        
+        document.getElementById('cleanDataBtn').addEventListener('click', async function() {
+            const resultDiv = document.getElementById('cleaningResult');
+            resultDiv.innerHTML = '<div class="alert alert-info">Cleaning data...</div>';
+            
+            try {
+                const response = await fetch('/clean', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+                    loadDataPreview();
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            }
+        });
+        
+        document.getElementById('recommendationsBtn').addEventListener('click', async function() {
+            const recommendationsDiv = document.getElementById('chartRecommendations');
+            recommendationsDiv.innerHTML = '<div class="alert alert-info">Getting recommendations...</div>';
+            
+            try {
+                const response = await fetch('/recommendations');
+                const data = await response.json();
+                
+                if (data.success) {
+                    let html = '<div class="row">';
+                    
+                    data.recommendations.forEach(rec => {
+                        html += `
+                            <div class="col-md-6 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-header">${rec.title} (${rec.priority} Priority)</div>
+                                    <div class="card-body">
+                                        <p><strong>Suitable Charts:</strong> ${rec.charts.join(', ')}</p>
+                                        <p><strong>Description:</strong> ${rec.description}</p>
+                                        <p><strong>Reason:</strong> ${rec.reason}</p>
+                                        <p><strong>Suggested Columns:</strong> ${rec.columns.join(', ')}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                    recommendationsDiv.innerHTML = html;
+                } else {
+                    recommendationsDiv.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+                }
+            } catch (error) {
+                recommendationsDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            }
+        });
+        
+        document.getElementById('advancedAnalysisBtn').addEventListener('click', function() {
+            window.location.href = '/advanced_analysis';
+        });
+        
+        document.getElementById('generateReportBtn').addEventListener('click', function() {
+            window.location.href = '/generate_report';
+        });
+    </script>
+</body>
+</html>
